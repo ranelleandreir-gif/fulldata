@@ -162,13 +162,15 @@ const accounts = {
   cashier: { user: "cashier", pass: "cash123" }
 };
 
+// 🔐 ADMIN ACCESS KEY
+const ADMIN_KEY = "KASIPAG-2026";
+
 function login() {
   const u = document.getElementById("username").value.trim();
   const p = document.getElementById("password").value.trim();
 
   let foundRole = null;
 
-  // 🔥 AUTO DETECT ROLE BASED ON CREDENTIALS
   for (const role in accounts) {
     if (accounts[role].user === u && accounts[role].pass === p) {
       foundRole = role;
@@ -184,12 +186,20 @@ function login() {
   localStorage.setItem("role", foundRole);
   localStorage.setItem("currentUser", foundRole);
 
-  // 🚀 ROUTING FIX
+  // 🔥 ADMIN SPECIAL ACCESS FLOW
   if (foundRole === "admin") {
-    window.location.href = "/admin-dashboard.html";
+    let key = prompt("Enter Admin Access Key:");
+
+    if (key === ADMIN_KEY) {
+      window.location.href = "/admin-dashboard.html";
+    } else {
+      alert("Invalid Access Key!");
+    }
+    return;
   }
 
-  else if (foundRole === "rider1") {
+  // 🚀 OTHER USERS
+  if (foundRole === "rider1") {
     window.location.href = "/rider1-dashboard.html";
   }
 
@@ -206,13 +216,12 @@ function login() {
   }
 }
 
-// Allow Enter key to submit
+// Enter key support
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById("password").addEventListener("keypress", function(e) {
     if (e.key === "Enter") login();
   });
 });
 </script>
-
 </body>
 </html>
