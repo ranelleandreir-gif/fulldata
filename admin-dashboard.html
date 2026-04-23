@@ -12,46 +12,59 @@ body {
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   color: #f1f5f9;
   padding: 20px;
-  min-height: 100vh;
 }
 
 .header {
-  font-size: 28px;
-  font-weight: 700;
   text-align: center;
-  margin-bottom: 10px;
+  font-size: 26px;
+  font-weight: 700;
 }
 
 .note {
   text-align: center;
   font-size: 13px;
   color: #cbd5e1;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.tabs button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: #334155;
+  color: white;
+}
+
+.tabs button.active {
+  background: #22c55e;
 }
 
 .summary {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin-bottom: 20px;
 }
 
 .summary-card {
   background: rgba(255,255,255,0.05);
-  padding: 15px;
-  border-radius: 12px;
+  padding: 12px;
+  border-radius: 10px;
   text-align: center;
-}
-
-.summary-card strong {
-  font-size: 20px;
-  display: block;
 }
 
 .form {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 input {
@@ -64,27 +77,21 @@ input {
 }
 
 button {
-  padding: 10px 15px;
+  padding: 10px 12px;
   border: none;
   border-radius: 8px;
   background: #22c55e;
   color: white;
-  font-weight: 600;
   cursor: pointer;
 }
 
 .card {
   background: rgba(255,255,255,0.06);
-  padding: 15px;
-  border-radius: 12px;
+  padding: 12px;
   margin-bottom: 10px;
+  border-radius: 10px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-}
-
-.card-info {
-  flex: 1;
 }
 
 .status {
@@ -93,19 +100,17 @@ button {
   font-size: 12px;
 }
 
-.status-pending { background: #facc15; color: #000; }
-.status-paid { background: #22c55e; }
-
-select {
-  padding: 6px;
-  border-radius: 6px;
-  margin-right: 5px;
-  background: #0f172a;
-  color: white;
-}
+.pending { background: #facc15; color: black; }
+.collected { background: #38bdf8; }
+.approved { background: #22c55e; }
 
 .delete-btn {
   background: #ef4444;
+}
+.small-btn {
+  padding: 6px 8px;
+  font-size: 12px;
+  margin-left: 5px;
 }
 </style>
 </head>
@@ -113,26 +118,14 @@ select {
 <body>
 
 <div class="header">👑 Kasipag Admin Dashboard</div>
-<div class="note">Real-time Microfinance System (Admin Control Panel)</div>
+<div class="note">Real-time Microfinance System</div>
 
-<!-- FINANCE SETTINGS -->
-<div class="summary">
-  <div class="summary-card">
-    <strong id="scheduleText"></strong>
-    <div>Collection Schedule</div>
-  </div>
-  <div class="summary-card">
-    <strong>₱50</strong>
-    <div>Collection Fee</div>
-  </div>
-  <div class="summary-card">
-    <strong>10%</strong>
-    <div>Rider Commission</div>
-  </div>
-  <div class="summary-card">
-    <strong id="totalCount">0</strong>
-    <div>Total Loans</div>
-  </div>
+<!-- TABS -->
+<div class="tabs">
+  <button onclick="setView('pending')" class="active">Pending</button>
+  <button onclick="setView('collected')">Collected</button>
+  <button onclick="setView('approved')">Approved</button>
+  <button onclick="setView('bin')">Recycle Bin</button>
 </div>
 
 <!-- FORM -->
@@ -150,7 +143,6 @@ select {
 
 <script>
 
-// 🔥 FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyCbA1nHwbw_yYVI9MtbjZetYZx7_gmw25c",
   authDomain: "kasipag-app.firebaseapp.com",
@@ -163,21 +155,9 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// 🔐 SETTINGS
-const systemSettings = {
-  schedule: "Mon–Fri (8:00 AM - 5:00 PM)",
-  riderCommission: 10,
-  collectionFee: 50
-};
+let view = "pending";
 
-document.getElementById("scheduleText").innerText = systemSettings.schedule;
-
-// 🔒 ACCESS CHECK
-if(localStorage.getItem("role") !== "admin"){
-  window.location.href = "/index.html";
-}
-
-// ➕ ADD CUSTOMER
+// ADD CUSTOMER
 function addCustomer(){
   let name = document.getElementById("name").value;
   let amount = document.getElementById("amount").value;
@@ -187,8 +167,8 @@ function addCustomer(){
   db.collection("payments").add({
     name,
     amount: Number(amount),
+    status: "pending",
     assignedTo: "",
-    status: "Pending",
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
 
@@ -196,65 +176,89 @@ function addCustomer(){
   document.getElementById("amount").value = "";
 }
 
-// 🚴 ASSIGN RIDER
-function assignRider(id, rider){
+// CHANGE VIEW
+function setView(v){
+  view = v;
+  render();
+
+  document.querySelectorAll(".tabs button").forEach(btn=>{
+    btn.classList.remove("active");
+  });
+  event.target.classList.add("active");
+}
+
+// UPDATE STATUS
+function updateStatus(id,status){
   db.collection("payments").doc(id).update({
-    assignedTo: rider
+    status: status
   });
 }
 
-// 🗑 DELETE
-function deletePayment(id){
+// DELETE → BIN
+function deleteItem(id,data){
+  db.collection("bin").add(data);
   db.collection("payments").doc(id).delete();
 }
 
-// 💰 COMPUTE RIDER INCOME
-function computeIncome(amount){
-  return (amount * systemSettings.riderCommission) / 100;
+// RESTORE FROM BIN
+function restore(id,data){
+  db.collection("payments").add(data);
+  db.collection("bin").doc(id).delete();
 }
 
-// 🔄 REAL-TIME
-db.collection("payments").orderBy("createdAt","desc")
-.onSnapshot(snapshot => {
+// REALTIME
+db.collection("payments").onSnapshot(snapshot=>{
+  render(snapshot);
+});
+
+db.collection("bin").onSnapshot(snapshot=>{
+  if(view === "bin") render(snapshot);
+});
+
+function render(snapshot){
 
   let list = document.getElementById("list");
   list.innerHTML = "";
 
-  let total = 0;
+  if(!snapshot){
+    snapshot = [];
+  }
 
-  snapshot.forEach(doc => {
-    total++;
+  snapshot.forEach(doc=>{
+
     let d = doc.data();
     let id = doc.id;
 
-    let income = computeIncome(d.amount);
+    if(view !== "bin" && d.status !== view) return;
 
     list.innerHTML += `
     <div class="card">
-      <div class="card-info">
+      <div>
         <b>${d.name}</b><br>
         ₱${d.amount}<br>
-        🚴 Rider: ${d.assignedTo || "Not Assigned"}<br>
-        💰 Rider Income: ₱${income.toFixed(2)}<br>
-        <span class="status status-pending">${d.status}</span>
+        <span class="status ${d.status}">${d.status}</span>
       </div>
 
       <div>
-        <select onchange="assignRider('${id}', this.value)">
-          <option value="">Assign Rider</option>
-          <option>Rider 1</option>
-          <option>Rider 2</option>
-          <option>Rider 3</option>
-        </select>
+        
+        ${view === "pending" ? `
+          <button class="small-btn" onclick="updateStatus('${id}','collected')">Collected</button>
+        ` : ""}
 
-        <button class="delete-btn" onclick="deletePayment('${id}')">Delete</button>
+        ${view === "collected" ? `
+          <button class="small-btn" onclick="updateStatus('${id}','approved')">Approve</button>
+        ` : ""}
+
+        ${view === "bin" ? `
+          <button class="small-btn" onclick='restore("${id}",${JSON.stringify(d)})'>Restore</button>
+        ` : ""}
+
+        <button class="delete-btn small-btn" onclick='deleteItem("${id}",${JSON.stringify(d)})'>Delete</button>
       </div>
     </div>
     `;
   });
-
-  document.getElementById("totalCount").innerText = total;
-});
+}
 
 </script>
 
