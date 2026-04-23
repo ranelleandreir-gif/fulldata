@@ -338,7 +338,276 @@ db.collection("payments").orderBy("createdAt", "desc").onSnapshot(snapshot => {
         </div>
         <div class="card-actions">
           <select onchange="assignRider('${docId}', this.value)">
+            <option value="">Assign<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Kasipag Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+body {
+  margin: 0;
+  font-family: Inter;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: #f1f5f9;
+  padding: 20px;
+}
+
+.header {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.note {
+  text-align: center;
+  font-size: 13px;
+  color: #94a3b8;
+  margin-bottom: 20px;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.summary-card {
+  background: rgba(255,255,255,0.06);
+  padding: 15px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.summary-card strong {
+  font-size: 22px;
+  display: block;
+}
+
+.form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 8px;
+  background: #22c55e;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.card {
+  background: rgba(255,255,255,0.06);
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.status {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.Pending { background: #facc15; color: #000; }
+.Collected { background: #3b82f6; color: #fff; }
+.Paid { background: #22c55e; }
+
+select {
+  padding: 6px;
+  border-radius: 6px;
+  margin-right: 5px;
+  background: #0f172a;
+  color: white;
+}
+
+.delete-btn {
+  background: #ef4444;
+}
+
+.logout {
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  background: #ef4444;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGOUT -->
+<button class="logout" onclick="logout()">🚪 Logout</button>
+
+<div class="header">👑 Kasipag Admin Dashboard</div>
+<div class="note">REALTIME MICROFINANCE SYSTEM (Admin Control Panel)</div>
+
+<div class="summary">
+  <div class="summary-card">
+    <strong id="totalCount">0</strong>
+    <div>Total</div>
+  </div>
+  <div class="summary-card">
+    <strong id="pendingCount">0</strong>
+    <div>Pending</div>
+  </div>
+  <div class="summary-card">
+    <strong id="collectedCount">0</strong>
+    <div>Collected</div>
+  </div>
+  <div class="summary-card">
+    <strong id="paidCount">0</strong>
+    <div>Paid</div>
+  </div>
+</div>
+
+<div class="form">
+  <input id="name" placeholder="Customer Name">
+  <input id="amount" placeholder="Amount">
+  <button onclick="addCustomer()">Add</button>
+</div>
+
+<div id="list"></div>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<script>
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCbA1nHwbw_yYVI9MtbjZetYZx7_gmw25c",
+  authDomain: "kasipag-app.firebaseapp.com",
+  projectId: "kasipag-app"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+/* SECURITY */
+if(localStorage.getItem("role") !== "admin"){
+  window.location.href = "index.html";
+}
+
+/* ADD */
+function addCustomer(){
+  let name = document.getElementById("name").value;
+  let amount = document.getElementById("amount").value;
+
+  db.collection("payments").add({
+    name,
+    amount:Number(amount),
+    rider:"",
+    status:"Pending"
+  });
+
+  document.getElementById("name").value="";
+  document.getElementById("amount").value="";
+}
+
+/* ASSIGN RIDER */
+function assignRider(id,rider){
+  db.collection("payments").doc(id).update({
+    rider:rider
+  });
+}
+
+/* STATUS */
+function setStatus(id,status){
+  db.collection("payments").doc(id).update({
+    status:status
+  });
+}
+
+/* DELETE */
+function deleteItem(id){
+  db.collection("payments").doc(id).delete();
+}
+
+/* REALTIME */
+db.collection("payments").onSnapshot(snapshot=>{
+
+  let list=document.getElementById("list");
+  list.innerHTML="";
+
+  let total=0,pending=0,collected=0,paid=0;
+
+  snapshot.forEach(doc=>{
+    let d=doc.data();
+    let id=doc.id;
+
+    total++;
+    if(d.status==="Pending") pending++;
+    if(d.status==="Collected") collected++;
+    if(d.status==="Paid") paid++;
+
+    list.innerHTML+=`
+      <div class="card">
+        <div>
+          <b>${d.name}</b><br>
+          ₱${d.amount}<br>
+          Rider: ${d.rider || "None"}<br>
+          <span class="${d.status}">${d.status}</span>
+        </div>
+
+        <div>
+          <select onchange="assignRider('${id}',this.value)">
             <option value="">Assign Rider</option>
+            <option>Rider 1</option>
+            <option>Rider 2</option>
+            <option>Rider 3</option>
+          </select>
+
+          <button onclick="setStatus('${id}','Collected')">Collected</button>
+          <button onclick="setStatus('${id}','Paid')">Paid</button>
+          <button class="delete-btn" onclick="deleteItem('${id}')">Delete</button>
+        </div>
+      </div>
+    `;
+  });
+
+  document.getElementById("totalCount").innerText=total;
+  document.getElementById("pendingCount").innerText=pending;
+  document.getElementById("collectedCount").innerText=collected;
+  document.getElementById("paidCount").innerText=paid;
+});
+
+/* LOGOUT */
+function logout(){
+  if(confirm("Logout now?")){
+    localStorage.removeItem("role");
+    window.location.href="index.html";
+  }
+}
+
+</script>
+
+</body>
+</html> Rider</option>
             <option value="Rider 1" ${d.assignedTo === "Rider 1" ? "selected" : ""}>Rider 1</option>
             <option value="Rider 2" ${d.assignedTo === "Rider 2" ? "selected" : ""}>Rider 2</option>
             <option value="Rider 3" ${d.assignedTo === "Rider 3" ? "selected" : ""}>Rider 3</option>
