@@ -168,11 +168,17 @@ button:hover::before {
   
     <div class="subtitle">Make every transaction fast, secure.</div>
   </div>
-
 <script>
 function go(role){
+  
   localStorage.setItem("selectedRole", role);
-  window.location.href = "/login.html";
+
+  if(role === "admin"){
+    window.location.href = "admin-access.html";
+  } else {
+    window.location.href = "login.html";
+  }
+
 }
 </script>
 
