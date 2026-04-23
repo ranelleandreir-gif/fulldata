@@ -7,132 +7,78 @@
 
 <style>
 body {
-  margin: 0;
-  font-family: 'Inter', Arial, sans-serif;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  color: #f1f5f9;
-  padding: 20px;
+  margin:0;
+  font-family:Inter;
+  background:linear-gradient(135deg,#0f172a,#1e293b);
+  color:#f1f5f9;
+  padding:20px;
 }
 
-.header {
-  text-align: center;
-  font-size: 26px;
-  font-weight: 700;
+.header{
+  text-align:center;
+  font-size:26px;
+  font-weight:700;
 }
 
-.note {
-  text-align: center;
-  font-size: 13px;
-  color: #cbd5e1;
-  margin-bottom: 15px;
+.tabs{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  margin:15px 0;
 }
 
-.tabs {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin-bottom: 15px;
+.tab{
+  padding:10px 15px;
+  border-radius:8px;
+  cursor:pointer;
+  background:#334155;
 }
 
-.tabs button {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  background: #334155;
-  color: white;
+.active{
+  background:#22c55e;
 }
 
-.tabs button.active {
-  background: #22c55e;
+.card{
+  background:rgba(255,255,255,0.06);
+  padding:15px;
+  border-radius:12px;
+  margin-bottom:10px;
 }
 
-.summary {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 20px;
+.status{
+  padding:3px 8px;
+  border-radius:6px;
+  font-size:12px;
 }
 
-.summary-card {
-  background: rgba(255,255,255,0.05);
-  padding: 12px;
-  border-radius: 10px;
-  text-align: center;
+.pending{background:#facc15;color:#000}
+.collected{background:#3b82f6}
+.approved{background:#22c55e}
+
+button,select{
+  margin-top:5px;
+  padding:6px;
+  border-radius:6px;
+  border:none;
 }
 
-.form {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-input {
-  flex: 1;
-  padding: 10px;
-  border-radius: 8px;
-  border: none;
-  background: rgba(255,255,255,0.1);
-  color: white;
-}
-
-button {
-  padding: 10px 12px;
-  border: none;
-  border-radius: 8px;
-  background: #22c55e;
-  color: white;
-  cursor: pointer;
-}
-
-.card {
-  background: rgba(255,255,255,0.06);
-  padding: 12px;
-  margin-bottom: 10px;
-  border-radius: 10px;
-  display: flex;
-  justify-content: space-between;
-}
-
-.status {
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-size: 12px;
-}
-
-.pending { background: #facc15; color: black; }
-.collected { background: #38bdf8; }
-.approved { background: #22c55e; }
-
-.delete-btn {
-  background: #ef4444;
-}
-.small-btn {
-  padding: 6px 8px;
-  font-size: 12px;
-  margin-left: 5px;
+.bin{
+  background:#ef4444;
+  color:white;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">👑 Kasipag Admin Dashboard</div>
-<div class="note">Real-time Microfinance System</div>
+<div class="header">👑 ADMIN DASHBOARD (REALTIME)</div>
 
 <!-- TABS -->
 <div class="tabs">
-  <button onclick="setView('pending')" class="active">Pending</button>
-  <button onclick="setView('collected')">Collected</button>
-  <button onclick="setView('approved')">Approved</button>
-  <button onclick="setView('bin')">Recycle Bin</button>
-</div>
-
-<!-- FORM -->
-<div class="form">
-  <input id="name" placeholder="Customer Name">
-  <input id="amount" placeholder="Loan Amount">
-  <button onclick="addCustomer()">Add</button>
+  <div class="tab active" onclick="setView('pending')">Pending</div>
+  <div class="tab" onclick="setView('collected')">Collected</div>
+  <div class="tab" onclick="setView('approved')">Approved</div>
+  <div class="tab" onclick="setView('bin')">Bin</div>
 </div>
 
 <div id="list"></div>
@@ -142,14 +88,10 @@ button {
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 <script>
-
 const firebaseConfig = {
-  apiKey: "AIzaSyCbA1nHwbw_yYVI9MtbjZetYZx7_gmw25c",
+  apiKey: "YOUR_KEY",
   authDomain: "kasipag-app.firebaseapp.com",
-  projectId: "kasipag-app",
-  storageBucket: "kasipag-app.firebasestorage.app",
-  messagingSenderId: "442166485005",
-  appId: "1:442166485005:web:ed07396b8a59006efa3544"
+  projectId: "kasipag-app"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -157,105 +99,88 @@ const db = firebase.firestore();
 
 let view = "pending";
 
-// ADD CUSTOMER
-function addCustomer(){
-  let name = document.getElementById("name").value;
-  let amount = document.getElementById("amount").value;
-
-  if(!name || !amount) return alert("Fill all fields");
-
-  db.collection("payments").add({
-    name,
-    amount: Number(amount),
-    status: "pending",
-    assignedTo: "",
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  document.getElementById("name").value = "";
-  document.getElementById("amount").value = "";
+/* CHECK ADMIN */
+if(localStorage.getItem("role") !== "admin"){
+  window.location.href="index.html";
 }
 
-// CHANGE VIEW
+/* CHANGE TAB */
 function setView(v){
   view = v;
-  render();
 
-  document.querySelectorAll(".tabs button").forEach(btn=>{
-    btn.classList.remove("active");
-  });
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
   event.target.classList.add("active");
+
+  render();
 }
 
-// UPDATE STATUS
-function updateStatus(id,status){
-  db.collection("payments").doc(id).update({
-    status: status
+/* ASSIGN RIDER */
+function assignRider(id, rider){
+  db.collection("loans").doc(id).update({
+    rider:rider
   });
 }
 
-// DELETE → BIN
-function deleteItem(id,data){
-  db.collection("bin").add(data);
-  db.collection("payments").doc(id).delete();
+/* STATUS CHANGE */
+function updateStatus(id,status){
+  db.collection("loans").doc(id).update({
+    status:status
+  });
 }
 
-// RESTORE FROM BIN
-function restore(id,data){
-  db.collection("payments").add(data);
-  db.collection("bin").doc(id).delete();
+/* MOVE TO BIN */
+function deleteLoan(id){
+  db.collection("loans").doc(id).update({
+    status:"bin"
+  });
 }
 
-// REALTIME
-db.collection("payments").onSnapshot(snapshot=>{
-  render(snapshot);
+/* REALTIME */
+db.collection("loans").onSnapshot(snapshot=>{
+  window.data = snapshot.docs;
+  render();
 });
 
-db.collection("bin").onSnapshot(snapshot=>{
-  if(view === "bin") render(snapshot);
-});
-
-function render(snapshot){
+/* RENDER */
+function render(){
 
   let list = document.getElementById("list");
-  list.innerHTML = "";
+  list.innerHTML="";
 
-  if(!snapshot){
-    snapshot = [];
-  }
-
-  snapshot.forEach(doc=>{
-
+  window.data.forEach(doc=>{
     let d = doc.data();
     let id = doc.id;
 
-    if(view !== "bin" && d.status !== view) return;
+    if(d.status !== view) return;
 
     list.innerHTML += `
-    <div class="card">
-      <div>
+      <div class="card">
         <b>${d.name}</b><br>
         ₱${d.amount}<br>
-        <span class="status ${d.status}">${d.status}</span>
+
+        <span class="status ${d.status}">${d.status}</span><br><br>
+
+        🚴 Rider: ${d.rider || "Not Assigned"}<br>
+
+        <select onchange="assignRider('${id}',this.value)">
+          <option>Rider 1</option>
+          <option>Rider 2</option>
+          <option>Rider 3</option>
+        </select>
+
+        <br>
+
+        ${view==="pending"
+          ? `<button onclick="updateStatus('${id}','collected')">Mark Collected</button>`
+          : ""}
+
+        ${view==="collected"
+          ? `<button onclick="updateStatus('${id}','approved')">Approve</button>`
+          : ""}
+
+        <button class="bin" onclick="deleteLoan('${id}')">Move to Bin</button>
+
       </div>
-
-      <div>
-        
-        ${view === "pending" ? `
-          <button class="small-btn" onclick="updateStatus('${id}','collected')">Collected</button>
-        ` : ""}
-
-        ${view === "collected" ? `
-          <button class="small-btn" onclick="updateStatus('${id}','approved')">Approve</button>
-        ` : ""}
-
-        ${view === "bin" ? `
-          <button class="small-btn" onclick='restore("${id}",${JSON.stringify(d)})'>Restore</button>
-        ` : ""}
-
-        <button class="delete-btn small-btn" onclick='deleteItem("${id}",${JSON.stringify(d)})'>Delete</button>
-      </div>
-    </div>
     `;
   });
 }
